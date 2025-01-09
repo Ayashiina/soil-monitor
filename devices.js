@@ -60,7 +60,7 @@ async function fetchDevices() {
     }
 }
 
-async function toggleDevice(deviceId, button) {
+async function toggleDevice(device_id, button) {
     try {
         const newState = button.classList.contains("inactive"); 
         const action = newState ? "start" : "stop";  
@@ -70,7 +70,7 @@ async function toggleDevice(deviceId, button) {
             headers: {
                 "Content-Type": "application/json"
             },
-            body: JSON.stringify({ action: action, deviceId: deviceId })  
+            body: JSON.stringify({ action: action, device_id: device_id })  
         });
 
         if (!response.ok) throw new Error("Failed to toggle device.");
