@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Sensors</title>
+    <link rel="stylesheet" href="devices.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+</head>
+
+<body>
+    <div class="container">
+        <button class="home-btn" onclick="window.location.href='/alerts.html'">
+            <i class="fas fa-home"></i>
+        </button>
+        <h1>Manage your Sensors</h1>
+        <form>
+            <label for="deviceName">Device Name:</label>
+            <input type="text" id="deviceName" placeholder="Enter device name" required>
+            <label for="deviceLocation">Device Location:</label>
+            <input type="text" id="deviceLocation" placeholder="Enter device location" required>
+            <button type="button" onclick="addDevice()">Add Device</button>
+        </form>
+
+        <h2>Device List</h2>
+        <ul id="deviceList"></ul>
+    </div>
+
+    <script src="devices.js"></script>
+    <script src="config.js"></script>
+</body>
+
+
+</html>
