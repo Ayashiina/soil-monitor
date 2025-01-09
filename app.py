@@ -4,9 +4,14 @@ from flask import Flask, render_template, jsonify, request
 from db import get_db_connection
 from flask_cors import CORS
 from pubnub.pnconfiguration import PNConfiguration
+from pubnub.callbacks import SubscribeCallback
 from pubnub.pubnub import PubNub
 import json
 import subprocess
+from dotenv import load_dotenv
+import uuid
+
+load_dotenv()
 
 app = Flask(__name__)
 CORS(app)
@@ -15,7 +20,7 @@ pnconfig = PNConfiguration()
 pnconfig.publish_key = (os.getenv("PUB_KEY"),)
 pnconfig.subscribe_key = (os.getenv("SUB_KEY"),)
 pnconfig.secret_key = (os.getenv("SEC_KEY"),)
-pnconfig.user_id = "my_custom_user_id"
+pnconfig.user_id = str(uuid.uuid4())
 pubnub = PubNub(pnconfig)
 channel = os.getenv("CHANNEL")
 
@@ -62,7 +67,7 @@ def alerts():
 def save_soil_data():
     try:
         data = request.json
-        deviceId = data["deviceId"]
+        device_id = data["device_id"]
         status = data["status"]
 
         connection = get_db_connection()
@@ -71,10 +76,10 @@ def save_soil_data():
         cursor = connection.cursor(dictionary=True)
         cursor.execute(
             """
-            INSERT INTO alerts_log (deviceId, status)
+            INSERT INTO alerts_log (device_id, status)
             VALUES (%s, %s)
         """,
-            (deviceId, status),
+            (device_id, status),
         )
         connection.commit()
         connection.close()
@@ -131,36 +136,47 @@ def monitoring_status():
 @app.route("/start-monitoring", methods=["POST"])
 def start_monitoring():
     try:
-        print("Received request:", request.json)
         data = request.json
         action = data["action"]
-        deviceId = data["deviceId"]
-        print(f"Action: {action}, Device ID: {deviceId}")
+        device_id = data["device_id"]
+        print(f"Action: {action}, Device ID: {device_id}")
 
         if action == "start":
-            print(f"Sending 'start' message for device ID: {deviceId}")
-
+            print(f"Sending 'start' message for device ID: {device_id}")
             message = {
                 "action": "start",
-                "deviceId": deviceId,
+                "device_id": device_id,
             }
-            response = pubnub.publish().channel(os.getenv("CHANNEL")).message(message)
+            response = pubnub.publish().channel(channel).message(message).sync()
+            if response.status == 200:
+                print(f"Message sent successfully to channel {channel}")
+            else:
+                print(
+                    f"Failed to send message. Status: {response.status}, Message: {response.error_data}"
+                )
 
-            print(
-                f"Raspberry Pi has received the start message for device {deviceId}. Starting the script."
+            return jsonify(
+                {"message": f"Monitoring started for device ID {device_id}."}
             )
-            os.system("python3 /home/pi/soil_measure.py &")
-
-            return jsonify({"message": f"Monitoring started for device ID {deviceId}."})
 
         elif action == "stop":
-            print(f"Sending 'stop' message for device ID: {deviceId}")
+            print(f"Sending 'stop' message for device ID: {device_id}")
             message = {
                 "action": "stop",
-                "deviceId": deviceId,
+                "device_id": device_id,
             }
-            response = pubnub.publish().channel(os.getenv("CHANNEL")).message(message)
-            return jsonify({"message": f"Monitoring stopped for device ID {deviceId}."})
+            response = pubnub.publish().channel(channel).message(message).sync()
+
+            if response.status == 200:
+                print(f"Message sent successfully to channel {channel}")
+            else:
+                print(
+                    f"Failed to send message. Status: {response.status}, Message: {response.error_data}"
+                )
+
+            return jsonify(
+                {"message": f"Monitoring stopped for device ID {device_id}."}
+            )
 
         else:
             return jsonify({"error": "Invalid action."}), 400
@@ -169,5 +185,17 @@ def start_monitoring():
         return jsonify({"error": str(e)}), 500
 
 
+class SoilSubscribeCallback(SubscribeCallback):
+    def message(self, pubnub, message):
+        print(f"Backend received response: {message.message}")
+
+
+def start_listening():
+    print("Backend is now listening for Pi responses...")
+    pubnub.add_listener(SoilSubscribeCallback())
+    pubnub.subscribe().channels(channel).execute()
+
+
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000, debug=True)
+    start_listening()

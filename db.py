@@ -14,7 +14,6 @@ def get_db_connection():
             database="soil_monitor",
         )
         if connection.is_connected():
-            print("Successfully connected to MySQL")
             return connection
     except mysql.connector.Error as err:
         print(f"Error: {err}")
