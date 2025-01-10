@@ -8,10 +8,10 @@ load_dotenv()
 def get_db_connection():
     try:
         connection = mysql.connector.connect(
-            host="soilmeasurement.c9m8a4s4ubga.us-east-1.rds.amazonaws.com",
+            host=os.getenv("DB_HOST"),
             user=os.getenv("DB_USER"),
-            password="soilmeasurement",
-            database="soil_monitor",
+            password=os.getenv("DB_PASSWORD"),
+            database=os.getenv("DB_NAME"),
         )
         if connection.is_connected():
             return connection
