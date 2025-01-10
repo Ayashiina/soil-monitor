@@ -1,17 +1,32 @@
 body {
-  font-family: Arial, sans-serif;
+  font-family: "Arial", sans-serif;
+  background-image: url("https://static.vecteezy.com/system/resources/previews/019/878/100/non_2x/planting-a-small-plant-on-a-pile-of-soil-with-gardening-tools-on-green-bokeh-background-free-photo.jpg");
+  background-size: cover;
+  background-position: center;
+  height: 100vh;
   display: flex;
-  flex-direction: column;
   justify-content: center;
   align-items: center;
-  height: 100vh;
-  margin: 0;
-  background-color: #f0f0f0;
+  color: #333;
+  padding: 20px;
+}
+
+.container {
+  background-color: #d8d296;
+  border-radius: 15px;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+  width: 100%;
+  max-width: 800px;
+  padding: 30px 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
 .welcome-message {
   font-size: 2rem;
   margin-bottom: 20px;
+  text-align: center;
 }
 
 .btn {
