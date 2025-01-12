@@ -15,6 +15,8 @@ load_dotenv()
 previous_state = None
 backend_url = os.getenv("BACKEND_URL")
 
+device_id = 3
+
 
 def start_listening():
     print("Starting to listen for PubNub messages...")
@@ -22,10 +24,11 @@ def start_listening():
 
 
 def check_soil_moisture():
+    GPIO.output(LED_PIN, GPIO.HIGH if GPIO.input(SOIL_PIN) else GPIO.LOW)
     return "Dry" if GPIO.input(SOIL_PIN) else "Wet"
 
 
-def send_data_to_backend(status):
+def send_data_to_backend(status, device_id):
     data = {
         "device_id": device_id,
         "status": status,
@@ -48,18 +51,31 @@ def blink_led(frequency):
 
 
 try:
+    print("Monitoring soil moisture status...")
     while True:
         status = check_soil_moisture()
-        if status != previous_state:
-            if status == "Dry":
-                blink_led(frequency=1)
-            elif status == "Wet":
-                GPIO.output(LED_PIN, GPIO.LOW)
+        
+        if status == "Dry":
+            if previous_state != "Dry":
+                print("Soil is dry. LED is blinking.")
+                send_data_to_backend(status, device_id)
+                previous_state = "Dry"
 
-            send_data_to_backend(status)
-            previous_state = status
+            GPIO.output(LED_PIN, GPIO.HIGH)
+            time.sleep(1)
+            GPIO.output(LED_PIN, GPIO.LOW)
+            time.sleep(1)
 
-        time.sleep(2)
+        elif status == "Wet":
+            if previous_state != "Wet":
+                print("Soil is wet. LED is turned off.")
+                send_data_to_backend(status, device_id)
+                previous_state = "Wet"
+
+            GPIO.output(LED_PIN, GPIO.LOW)
+
+        time.sleep(0.5) 
 
 except KeyboardInterrupt:
+    print("Exiting program. Cleaning up GPIO...")
     GPIO.cleanup()
